@@ -33,7 +33,7 @@
                 <i class="fa fa-edit">Edit</i>
             </button>
             <br />
-            <button class="btn" (click)="onExpand($event)">
+            <button class="btn" (click)="onExpand($event, null)">
                 <i *ngIf="focusedNode.isExpanded" class="fa fa-chevron-down"></i>
                 <i *ngIf="!focusedNode.isExpanded" class="fa fa-chevron-up"></i>
             </button>

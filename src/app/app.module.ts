@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 import { AuthModule } from './feature-module/auth/auth.module';
 import { HomeModule } from './feature-module/home/home.module';
 import { TreeAPIService } from './core-services/tree-api.service';
+import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 @NgModule({
@@ -20,7 +21,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
     HomeModule,
     BrowserAnimationsModule,
   ],
-  providers: [TreeAPIService],
+  providers: [{ provide: LocationStrategy, useClass: HashLocationStrategy }, TreeAPIService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

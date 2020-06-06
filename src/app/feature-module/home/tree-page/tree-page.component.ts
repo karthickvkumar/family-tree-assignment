@@ -196,15 +196,17 @@ export class TreePageComponent implements OnInit {
       const offsetTop = 25;
       if (node.hasOwnProperty('parentId') && node.parentId) {
         let parentNode = this.familyTree.getItemsById(node.parentId);
-        let lastSibling = parentNode.childrens && parentNode.childrens instanceof Array ? this.familyTree.getItemsById(parentNode.childrens[parentNode.childrens.length - 1]) : null;
-        /* Setting the relative positions of parent and child nodes*/
-        parentNode.set({
-          childrens: parentNode.childrens instanceof Array ? parentNode.childrens.concat(node.id) : [node.id]
-        })
-        node.set({
-          top: parentNode.top + parentNode.height + offsetTop,
-          left: lastSibling && lastSibling instanceof Object ? lastSibling.left + lastSibling.width : parentNode.left - (parentNode.width / 2)
-        })
+        if (parentNode) {
+          let lastSibling = parentNode.childrens && parentNode.childrens instanceof Array ? this.familyTree.getItemsById(parentNode.childrens[parentNode.childrens.length - 1]) : null;
+          /* Setting the relative positions of parent and child nodes*/
+          parentNode.set({
+            childrens: parentNode.childrens instanceof Array ? parentNode.childrens.concat(node.id) : [node.id]
+          })
+          node.set({
+            top: parentNode.top + parentNode.height + offsetTop,
+            left: lastSibling && lastSibling instanceof Object ? lastSibling.left + lastSibling.width : parentNode.left - (parentNode.width / 2)
+          });
+        }
       }
     }
     catch (error) {
