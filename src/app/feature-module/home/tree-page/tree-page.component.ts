@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import { FormGroup, FormControl } from '@angular/forms';
 import { TreeModel } from '../../../core-models/tree.model';
+import { TreeAPIService } from '../../../core-services/tree-api.service';
 import { fabric } from 'fabric';
 
 @Component({
@@ -18,7 +19,7 @@ export class TreePageComponent implements OnInit {
   /* DOM reference for the sidebar drawer  */
   @ViewChild('editLayout', { static: true }) layoutEl: ElementRef;
 
-  constructor(private renderer: Renderer2) {
+  constructor(private renderer: Renderer2, private treeAPI: TreeAPIService) {
     /* Extended the Fabric JS to getAbsoluteCoords  */
     fabric.Canvas.prototype.getAbsoluteCoords = function (object: fabric.Object) {
       return {
@@ -89,27 +90,7 @@ export class TreePageComponent implements OnInit {
           this.familyTree.renderAll();
         }
       });
-      /* Binding the line ponter position for each node */
-      const fabricNode = this.getNode();
-      fabricNode.forEach((node: fabric.Object | any) => {
-        this.alignToPosition(node);
-        /* Binding the line ponter position for each node at moving state*/
-        node.on('moving', () => {
-          this.positionBtn(node)
-        });
-        /* Binding the line ponter position for each node at selection state*/
-        node.on('selected', () => {
-          this.positionBtn(node)
-        });
-        this.familyTree.add(node);
-      });
-      this.createLines();
-      let target = this.familyTree.getItemsById("group-2");
-      if (target) {
-        /* Triggering the default expand functionality*/
-        this.onExpand(null, target);
-        this.familyTree.renderAll();
-      }
+      this.getNode();
     }
     catch (error) {
 
@@ -120,46 +101,57 @@ export class TreePageComponent implements OnInit {
     try {
       if (this.selectedNode && this.selectedNode.mode === 'edit') {
         /* Handles the node update and set the updated value to each node*/
-        this.selectedNode._objects[0].set({ fill: form.value.color })
-        this.selectedNode._objects[1].set({ text: form.value.name })
-        this.selectedNode._objects[2].set({ text: form.value.role })
-        this.familyTree.renderAll();
-        this.closeLayout();
+        form.value.id = this.selectedNode.id;
+        form.value.parentId = this.selectedNode.parentId;
+        this.treeAPI.updateNode(form.value).subscribe((response) => {
+          this.selectedNode._objects[0].set({ fill: form.value.color })
+          this.selectedNode._objects[1].set({ text: form.value.name })
+          this.selectedNode._objects[2].set({ text: form.value.role })
+          this.familyTree.renderAll();
+          this.closeLayout();
+        }, (error) => {
+
+        })
       }
       else {
         /* Handles the newly added node value*/
         form.value.id = this.generateUID();
         form.value.parentId = this.selectedNode.id;
         let createdNode = this.createNode(form.value);
-        this.alignToPosition(createdNode);
-        /* Extracting the lines coordinate from the parent node position*/
-        let x1 = this.selectedNode.get('left') + this.selectedNode.get('width') / 2;
-        let y1 = this.selectedNode.get('top') + this.selectedNode.get('height');
-        let x2 = createdNode.get('left') + createdNode.get('width') / 2;
-        let y2 = createdNode.get('top');
-        /* Binding the line coordinates for newly created node*/
-        let line = this.drawLine([x1, y1, x2, y2]);
-        line.set({ opacity: 0 });
-        createdNode.on('moving', () => {
-          this.positionBtn(createdNode);
+        /*Service API for creating a new node in UI */
+        this.treeAPI.createNode(form.value).subscribe((response) => {
+          this.alignToPosition(createdNode);
+          /* Extracting the lines coordinate from the parent node position*/
+          let x1 = this.selectedNode.get('left') + this.selectedNode.get('width') / 2;
+          let y1 = this.selectedNode.get('top') + this.selectedNode.get('height');
+          let x2 = createdNode.get('left') + createdNode.get('width') / 2;
+          let y2 = createdNode.get('top');
+          /* Binding the line coordinates for newly created node*/
+          let line = this.drawLine([x1, y1, x2, y2]);
+          line.set({ opacity: 0 });
+          createdNode.on('moving', () => {
+            this.positionBtn(createdNode);
+          });
+          createdNode.on('selected', () => {
+            this.positionBtn(createdNode);
+          });
+          this.familyTree.add(createdNode, line);
+          this.selectedNode.set({
+            ['line-' + createdNode.id]: line
+          })
+          createdNode.set({
+            ['line-' + createdNode.id]: line,
+            opacity: 1
+          });
+          /*Re-render the canvas to show the result */
+          this.familyTree.renderAll();
+          this.makeVisible(this.selectedNode);
+          /* Clearing the reactive form by resting its value*/
+          form.reset();
+          this.closeLayout();
+        }, (error) => {
+
         });
-        createdNode.on('selected', () => {
-          this.positionBtn(createdNode);
-        });
-        this.familyTree.add(createdNode, line);
-        this.selectedNode.set({
-          ['line-' + createdNode.id]: line
-        })
-        createdNode.set({
-          ['line-' + createdNode.id]: line,
-          opacity: 1
-        });
-        /*Re-render the canvas to show the result */
-        this.familyTree.renderAll();
-        this.makeVisible(this.selectedNode);
-        /* Clearing the reactive form by resting its value*/
-        form.reset();
-        this.closeLayout();
       }
     }
     catch (error) {
@@ -253,56 +245,43 @@ export class TreePageComponent implements OnInit {
     try {
       const fabricNode: fabric.Object = [];
       /*Initializing the list all node API using HTTP method */
-      const tree: TreeModel[] = [
-        {
-          id: 'group-1',
-          name: 'Ben',
-          role: 'Father',
-          color: 'blue',
-          left: 100,
-          top: 30,
-          child: []
-        },
-        {
-          id: 'group-2',
-          name: 'Peter',
-          role: 'Father',
-          color: 'black',
-          left: 400,
-          top: 30,
-          child: [
-            {
-              id: 'group-3',
-              parentId: 'group-2',
-              name: 'John',
-              role: 'Son',
-              color: 'orange',
-              child: []
-            },
-            {
-              id: 'group-4',
-              parentId: 'group-2',
-              name: 'Freda',
-              role: 'Daughter',
-              color: 'pink',
-              child: []
-            }
-          ]
-        }
-      ];
-      /*Iterating the node and assign it to each of its parent and child relationship */
-      const iterateNodes = (tree: TreeModel[]) => {
-        if (tree)
-          tree.forEach((node) => {
-            fabricNode.push(this.createNode(node));
-            if (node.child instanceof Array && node.child.length > 0) {
-              iterateNodes(node.child);
-            }
+      let tree: TreeModel[] = [];
+      let res = this.treeAPI.getAllNode().subscribe((respone: TreeModel[]) => {
+        tree = respone;
+        /*Iterating the node and assign it to each of its parent and child relationship */
+        const iterateNodes = (tree: TreeModel[]) => {
+          if (tree)
+            tree.forEach((node) => {
+              fabricNode.push(this.createNode(node));
+              if (node.child instanceof Array && node.child.length > 0) {
+                iterateNodes(node.child);
+              }
+            });
+        };
+        iterateNodes(tree);
+        /* Binding the line ponter position for each node */
+        fabricNode.forEach((node: fabric.Object | any) => {
+          this.alignToPosition(node);
+          /* Binding the line ponter position for each node at moving state*/
+          node.on('moving', () => {
+            this.positionBtn(node)
           });
-      };
-      iterateNodes(tree);
-      /*Returning the collection of node */
-      return fabricNode;
+          /* Binding the line ponter position for each node at selection state*/
+          node.on('selected', () => {
+            this.positionBtn(node)
+          });
+          this.familyTree.add(node);
+        });
+        this.createLines();
+        let target = this.familyTree.getItemsById("group-2");
+        if (target) {
+          /* Triggering the default expand functionality*/
+          this.onExpand(null, target);
+          this.familyTree.renderAll();
+        }
+      }, (error) => {
+
+      });
     }
     catch (error) {
 
