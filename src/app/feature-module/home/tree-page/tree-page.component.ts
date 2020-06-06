@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, ElementRef, Renderer2 } from '@angular/co
 import { FormGroup, FormControl } from '@angular/forms';
 import { TreeModel } from '../../../core-models/tree.model';
 import { TreeAPIService } from '../../../core-services/tree-api.service';
+import { finalize } from 'rxjs/operators';
 import { fabric } from 'fabric';
 
 @Component({
@@ -103,15 +104,18 @@ export class TreePageComponent implements OnInit {
         /* Handles the node update and set the updated value to each node*/
         form.value.id = this.selectedNode.id;
         form.value.parentId = this.selectedNode.parentId ? this.selectedNode.parentId : 'root-user';
-        this.treeAPI.updateNode(form.value).subscribe((response) => {
+        this.treeAPI.updateNode(form.value).pipe(
+          finalize(() => {
+            this.selectedNode._objects[0].set({ fill: form.value.color })
+            this.selectedNode._objects[1].set({ text: form.value.name })
+            this.selectedNode._objects[2].set({ text: form.value.role })
+            this.familyTree.renderAll();
+            this.closeLayout();
+          })
+        ).subscribe((response) => {
           this.treeAPI.notification('Node has been Successfully Updated');
-          this.selectedNode._objects[0].set({ fill: form.value.color })
-          this.selectedNode._objects[1].set({ text: form.value.name })
-          this.selectedNode._objects[2].set({ text: form.value.role })
-          this.familyTree.renderAll();
-          this.closeLayout();
         }, (error) => {
-          this.treeAPI.notification(error.error);
+          this.treeAPI.notification("Node updated, but failed to save in Backend");
         })
       }
       else {
@@ -120,39 +124,42 @@ export class TreePageComponent implements OnInit {
         form.value.parentId = this.selectedNode.id;
         let createdNode = this.createNode(form.value);
         /*Service API for creating a new node in UI */
-        this.treeAPI.createNode(form.value).subscribe((response) => {
-          this.alignToPosition(createdNode);
-          /* Extracting the lines coordinate from the parent node position*/
-          let x1 = this.selectedNode.get('left') + this.selectedNode.get('width') / 2;
-          let y1 = this.selectedNode.get('top') + this.selectedNode.get('height');
-          let x2 = createdNode.get('left') + createdNode.get('width') / 2;
-          let y2 = createdNode.get('top');
-          /* Binding the line coordinates for newly created node*/
-          let line = this.drawLine([x1, y1, x2, y2]);
-          line.set({ opacity: 0 });
-          createdNode.on('moving', () => {
-            this.positionBtn(createdNode);
-          });
-          createdNode.on('selected', () => {
-            this.positionBtn(createdNode);
-          });
-          this.familyTree.add(createdNode, line);
-          this.selectedNode.set({
-            ['line-' + createdNode.id]: line
+        this.treeAPI.createNode(form.value).pipe(
+          finalize(() => {
+            this.alignToPosition(createdNode);
+            /* Extracting the lines coordinate from the parent node position*/
+            let x1 = this.selectedNode.get('left') + this.selectedNode.get('width') / 2;
+            let y1 = this.selectedNode.get('top') + this.selectedNode.get('height');
+            let x2 = createdNode.get('left') + createdNode.get('width') / 2;
+            let y2 = createdNode.get('top');
+            /* Binding the line coordinates for newly created node*/
+            let line = this.drawLine([x1, y1, x2, y2]);
+            line.set({ opacity: 0 });
+            createdNode.on('moving', () => {
+              this.positionBtn(createdNode);
+            });
+            createdNode.on('selected', () => {
+              this.positionBtn(createdNode);
+            });
+            this.familyTree.add(createdNode, line);
+            this.selectedNode.set({
+              ['line-' + createdNode.id]: line
+            })
+            createdNode.set({
+              ['line-' + createdNode.id]: line,
+              opacity: 1
+            });
+            /*Re-render the canvas to show the result */
+            this.familyTree.renderAll();
+            this.makeVisible(this.selectedNode);
+            /* Clearing the reactive form by resting its value*/
+            form.reset();
+            this.closeLayout();
           })
-          createdNode.set({
-            ['line-' + createdNode.id]: line,
-            opacity: 1
-          });
-          /*Re-render the canvas to show the result */
-          this.familyTree.renderAll();
-          this.makeVisible(this.selectedNode);
-          /* Clearing the reactive form by resting its value*/
-          form.reset();
-          this.closeLayout();
+        ).subscribe((response) => {
           this.treeAPI.notification('Node has been Successfully Created');
         }, (error) => {
-          this.treeAPI.notification(error.error);
+          this.treeAPI.notification("Node added, but failed to save in Backend");
         });
       }
     }
