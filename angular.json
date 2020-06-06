@@ -24,9 +24,14 @@
               "src/assets"
             ],
             "styles": [
+              "node_modules/bootstrap/dist/css/bootstrap.css",
+              "node_modules/font-awesome/css/font-awesome.css",
+              "node_modules/material-design-iconic-font/dist/css/material-design-iconic-font.css",
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [
+              "node_modules/fabric/dist/fabric.js"
+            ]
           },
           "configurations": {
             "production": {
@@ -115,6 +120,7 @@
           }
         }
       }
-    }},
+    }
+  },
   "defaultProject": "family-tree"
 }

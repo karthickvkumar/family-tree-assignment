@@ -1,0 +1,38 @@
+<div class="limiter">
+    <div class="container-login100" style="background-image: url('assets/images/bg-01.jpg');">
+        <div #editLayout class="sidenav">
+            <a class="closebtn" (click)="closeLayout()">&times;</a>
+            <form [formGroup]="nodeUpdateFrom" (ngSubmit)="onAddNode(nodeUpdateFrom)">
+                <div style="margin-left: 10px;">
+                    <label>Name:</label>
+                    <br />
+                    <input type="text" formControlName="name" placeholder="Enter the node name" />
+                    <br>
+                    <label>Role:</label>
+                    <br />
+                    <input type="text" formControlName="role" placeholder="Enter the node role" />
+                    <br>
+                    <label>Select any Color:</label>
+                    <br />
+                    <input type="color" formControlName="color" />
+                    <br>
+                    <button class="btn" style="margin-top: 20px;">Add New Node</button>
+                </div>
+            </form>
+        </div>
+        <div class="wrap-login100 p-l-55 p-r-55 p-t-65 p-b-54" style="width: 96vw;
+    height: 90vh;overflow: scroll;">
+
+            <canvas id="family-tree-editor" width="800" height="1000"></canvas>
+        </div>
+        <div #treeOptions style="position: absolute;z-index: 1;">
+            <button class="btn" (click)="onEdit($event)">
+                <i class="fa fa-edit"></i>
+            </button>
+            <button class="btn" (click)="onDelete($event)"><i class="fa fa-trash"></i></button>
+            <br />
+            <button class="btn" (click)="onExpand($event)"><i class="fa fa-chevron-down"></i></button>
+            <button class="btn" (click)="addChild($event)"><i class="fa fa-plus-square"></i></button>
+        </div>
+    </div>
+</div>
