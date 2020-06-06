@@ -10,7 +10,8 @@ import { fabric } from 'fabric';
 export class TreePageComponent implements OnInit {
   familyTree: any;
   nodeUpdateFrom: FormGroup;
-  selectedNode: any;
+  selectedNode: any = {};
+  focusedNode: any = {};
   @ViewChild('treeOptions', { static: true }) el: ElementRef;
   @ViewChild('editLayout', { static: true }) layoutEl: ElementRef;
 
@@ -46,6 +47,7 @@ export class TreePageComponent implements OnInit {
 
     this.familyTree.on('mouse:over', (node) => {
       if (node && node.target) {
+        this.focusedNode = node.target;
         this.familyTree.setActiveObject(node.target);
         this.familyTree.renderAll();
       }
@@ -92,37 +94,51 @@ export class TreePageComponent implements OnInit {
       this.familyTree.add(node);
     });
     this.createLines();
+    let target = this.familyTree.getItemsById("group-2");
+    if (target) {
+      this.onExpand(null, target);
+      this.familyTree.renderAll();
+    }
   }
 
   onAddNode(form) {
-    form.value.id = this.generateUID();
-    form.value.parentId = this.selectedNode.id;
-    let createdNode = this.createNode(form.value);
-    this.alignToPosition(createdNode);
-    let x1 = this.selectedNode.get('left') + this.selectedNode.get('width') / 2;
-    let y1 = this.selectedNode.get('top') + this.selectedNode.get('height');
-    let x2 = createdNode.get('left') + createdNode.get('width') / 2;
-    let y2 = createdNode.get('top');
-    let line = this.drawLine([x1, y1, x2, y2]);
-    line.set({ opacity: 0 });
-    createdNode.on('moving', () => {
-      this.positionBtn(createdNode);
-    });
-    createdNode.on('selected', () => {
-      this.positionBtn(createdNode);
-    });
-    this.familyTree.add(createdNode, line);
-    this.selectedNode.set({
-      ['line-' + createdNode.id]: line
-    })
-    createdNode.set({
-      ['line-' + createdNode.id]: line,
-      opacity: 1
-    });
-    this.familyTree.renderAll();
-    this.makeVisible(this.selectedNode);
-    form.reset();
-    this.closeLayout();
+    if (this.selectedNode && this.selectedNode.mode === 'edit') {
+      this.selectedNode._objects[0].set({ fill: form.value.color })
+      this.selectedNode._objects[1].set({ text: form.value.name })
+      this.selectedNode._objects[2].set({ text: form.value.role })
+      this.familyTree.renderAll();
+      this.closeLayout();
+    }
+    else {
+      form.value.id = this.generateUID();
+      form.value.parentId = this.selectedNode.id;
+      let createdNode = this.createNode(form.value);
+      this.alignToPosition(createdNode);
+      let x1 = this.selectedNode.get('left') + this.selectedNode.get('width') / 2;
+      let y1 = this.selectedNode.get('top') + this.selectedNode.get('height');
+      let x2 = createdNode.get('left') + createdNode.get('width') / 2;
+      let y2 = createdNode.get('top');
+      let line = this.drawLine([x1, y1, x2, y2]);
+      line.set({ opacity: 0 });
+      createdNode.on('moving', () => {
+        this.positionBtn(createdNode);
+      });
+      createdNode.on('selected', () => {
+        this.positionBtn(createdNode);
+      });
+      this.familyTree.add(createdNode, line);
+      this.selectedNode.set({
+        ['line-' + createdNode.id]: line
+      })
+      createdNode.set({
+        ['line-' + createdNode.id]: line,
+        opacity: 1
+      });
+      this.familyTree.renderAll();
+      this.makeVisible(this.selectedNode);
+      form.reset();
+      this.closeLayout();
+    }
   }
 
   makeVisible(node) {
@@ -178,6 +194,8 @@ export class TreePageComponent implements OnInit {
       id: node.id,
       hasBorders: false,
       hasControls: false,
+      left: node.left ? node.left : 0,
+      top: node.top ? node.top : 0,
       parentId: node.parentId ? node.parentId : null
     });
     return groupedView;
@@ -191,6 +209,8 @@ export class TreePageComponent implements OnInit {
         name: 'Ben',
         role: 'Father',
         color: 'blue',
+        left: 100,
+        top: 30,
         child: []
       },
       {
@@ -198,6 +218,9 @@ export class TreePageComponent implements OnInit {
         name: 'Peter',
         role: 'Father',
         color: 'black',
+        expand: true,
+        left: 400,
+        top: 30,
         child: [
           {
             id: 'group-3',
@@ -267,28 +290,6 @@ export class TreePageComponent implements OnInit {
     });
   }
 
-  generateUID() {
-    var s = [];
-    var hexDigits = "0123456789abcdef";
-    for (var i = 0; i < 36; i++) {
-      s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
-    }
-    s[14] = "4";
-    s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
-    s[8] = s[13] = s[18] = s[23] = "-";
-
-    var uuid = s.join("");
-    return uuid;
-  }
-
-  positionBtn(obj) {
-    let offsetHeight = 75;
-    var absCoords = this.familyTree.getAbsoluteCoords(obj);
-    this.el.nativeElement.id = obj.id;
-    this.el.nativeElement.style.left = (absCoords.left) + 'px';
-    this.el.nativeElement.style.top = (absCoords.top + obj.height - offsetHeight) + 'px';
-  }
-
   findSelectedNode(event) {
     let expandBtnDOM = this.renderer.parentNode(event.target);
     let treeOptionDOM = this.renderer.parentNode(expandBtnDOM);
@@ -301,14 +302,22 @@ export class TreePageComponent implements OnInit {
     }
   }
 
-  onExpand(event) {
-    let selectedNode = this.findSelectedNode(event);
+  onExpand(event, target: any) {
+    let selectedNode;
+    if (!event && target instanceof Object) {
+      selectedNode = target;
+    } else {
+      selectedNode = this.findSelectedNode(event);
+    }
     if (selectedNode) {
       if (selectedNode.childrens instanceof Array) {
+        this.focusedNode = selectedNode
+        this.focusedNode.isExpanded = !selectedNode.isExpanded;
+        this.selectedNode = selectedNode;
         selectedNode.childrens.forEach((childId) => {
           let childNode = this.familyTree.getItemsById(childId);
-          childNode.set({ opacity: 1 });
-          selectedNode['line-' + childId].set({ opacity: 1 });
+          childNode.set({ opacity: !selectedNode.isExpanded ? 0 : 1 });
+          selectedNode['line-' + childId].set({ opacity: !selectedNode.isExpanded ? 0 : 1 });
           this.familyTree.renderAll();
         })
       } else {
@@ -322,14 +331,17 @@ export class TreePageComponent implements OnInit {
     if (selectedNode) {
       this.layoutEl.nativeElement.style.width = "250px";
       this.selectedNode = selectedNode;
+      this.selectedNode.mode = 'add';
     }
   }
+
   onEdit(event) {
     let selectedNode = this.findSelectedNode(event);
     if (selectedNode) {
       this.layoutEl.nativeElement.style.width = "250px";
       this.selectedNode = selectedNode;
-      console.log(selectedNode._objects)
+      this.selectedNode.mode = 'edit';
+      this.selectedNode.color_code = selectedNode._objects[0].fill;
       this.nodeUpdateFrom.setValue({
         name: selectedNode._objects[1].text,
         role: selectedNode._objects[2].text,
@@ -338,10 +350,26 @@ export class TreePageComponent implements OnInit {
     }
   }
 
-  onDelete(event) {
-    let selectedNode = this.findSelectedNode(event);
-    if (selectedNode) {
+  generateUID() {
+    let s = [];
+    let hexDigits = "0123456789abcdef";
+    for (let i = 0; i < 36; i++) {
+      s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
     }
+    s[14] = "4";
+    s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
+    s[8] = s[13] = s[18] = s[23] = "-";
+    let uuid = s.join("");
+    return uuid;
+  }
+
+  positionBtn(obj) {
+    let offsetHeight = 75;
+    var absCoords = this.familyTree.getAbsoluteCoords(obj);
+    this.el.nativeElement.id = obj.id;
+    this.el.nativeElement.style.opacity = obj.get('opacity')
+    this.el.nativeElement.style.left = (absCoords.left) + 'px';
+    this.el.nativeElement.style.top = (absCoords.top + obj.height - offsetHeight) + 'px';
   }
 
   closeLayout() {

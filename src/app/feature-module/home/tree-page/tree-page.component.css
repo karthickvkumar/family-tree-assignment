@@ -30,9 +30,13 @@
   transition: 0.3s;
 }
 
-input{
+.inputbox{
   border: 1px solid;
   padding: 5px;
+}
+
+input:focus {
+    border-color: black !important;
 }
 
 .sidenav .closebtn {

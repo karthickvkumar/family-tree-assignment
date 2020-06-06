@@ -6,32 +6,37 @@
                 <div style="margin-left: 10px;">
                     <label>Name:</label>
                     <br />
-                    <input type="text" formControlName="name" placeholder="Enter the node name" />
+                    <input type="text" class="inputbox" formControlName="name" placeholder="Enter the node name" />
                     <br>
                     <label>Role:</label>
                     <br />
-                    <input type="text" formControlName="role" placeholder="Enter the node role" />
+                    <input type="text" class="inputbox" formControlName="role" placeholder="Enter the node role" />
                     <br>
                     <label>Select any Color:</label>
                     <br />
-                    <input type="color" formControlName="color" />
+                    <input type="color" formControlName="color"
+                        [ngStyle]="{'color' : selectedNode.color_code, 'background-color' : selectedNode.color_code}" />
                     <br>
-                    <button class="btn" style="margin-top: 20px;">Add New Node</button>
+                    <button *ngIf="selectedNode.mode == 'add'" class="btn" style="margin-top: 20px;">Add New
+                        Node</button>
+                    <button *ngIf="selectedNode.mode == 'edit'" class="btn" style="margin-top: 20px;">Edit Node</button>
                 </div>
             </form>
         </div>
-        <div class="wrap-login100 p-l-55 p-r-55 p-t-65 p-b-54" style="width: 96vw;
+        <div class="wrap-login100" style="width: 96vw;
     height: 90vh;overflow: scroll;">
 
-            <canvas id="family-tree-editor" width="800" height="1000"></canvas>
+            <canvas id="family-tree-editor" width="1200" height="1200"></canvas>
         </div>
-        <div #treeOptions style="position: absolute;z-index: 1;">
+        <div #treeOptions style="position: absolute;z-index: 1;opacity:0">
             <button class="btn" (click)="onEdit($event)">
-                <i class="fa fa-edit"></i>
+                <i class="fa fa-edit">Edit</i>
             </button>
-            <button class="btn" (click)="onDelete($event)"><i class="fa fa-trash"></i></button>
             <br />
-            <button class="btn" (click)="onExpand($event)"><i class="fa fa-chevron-down"></i></button>
+            <button class="btn" (click)="onExpand($event)">
+                <i *ngIf="focusedNode.isExpanded" class="fa fa-chevron-down"></i>
+                <i *ngIf="!focusedNode.isExpanded" class="fa fa-chevron-up"></i>
+            </button>
             <button class="btn" (click)="addChild($event)"><i class="fa fa-plus-square"></i></button>
         </div>
     </div>
