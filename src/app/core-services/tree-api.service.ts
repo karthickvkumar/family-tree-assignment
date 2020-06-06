@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../environments/environment'
+import { environment } from '../../environments/environment';
 import { from } from 'rxjs';
 
 @Injectable({
@@ -23,6 +23,10 @@ export class TreeAPIService {
   updateNode(node) {
     let url: string = environment.apiURL + "node/edit/" + node.id;
     return this.http.put(url, node);
+  }
+
+  notification(message) {
+    alert(message);
   }
 
 }

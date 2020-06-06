@@ -93,7 +93,7 @@ export class TreePageComponent implements OnInit {
       this.getNode();
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -102,15 +102,16 @@ export class TreePageComponent implements OnInit {
       if (this.selectedNode && this.selectedNode.mode === 'edit') {
         /* Handles the node update and set the updated value to each node*/
         form.value.id = this.selectedNode.id;
-        form.value.parentId = this.selectedNode.parentId;
+        form.value.parentId = this.selectedNode.parentId ? this.selectedNode.parentId : 'root-user';
         this.treeAPI.updateNode(form.value).subscribe((response) => {
+          this.treeAPI.notification('Node has been Successfully Updated');
           this.selectedNode._objects[0].set({ fill: form.value.color })
           this.selectedNode._objects[1].set({ text: form.value.name })
           this.selectedNode._objects[2].set({ text: form.value.role })
           this.familyTree.renderAll();
           this.closeLayout();
         }, (error) => {
-
+          this.treeAPI.notification(error.error);
         })
       }
       else {
@@ -149,13 +150,14 @@ export class TreePageComponent implements OnInit {
           /* Clearing the reactive form by resting its value*/
           form.reset();
           this.closeLayout();
+          this.treeAPI.notification('Node has been Successfully Created');
         }, (error) => {
-
+          this.treeAPI.notification(error.error);
         });
       }
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -177,7 +179,7 @@ export class TreePageComponent implements OnInit {
       this.familyTree.renderAll();
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -199,7 +201,7 @@ export class TreePageComponent implements OnInit {
       }
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -237,7 +239,7 @@ export class TreePageComponent implements OnInit {
       return groupedView;
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -280,11 +282,11 @@ export class TreePageComponent implements OnInit {
           this.familyTree.renderAll();
         }
       }, (error) => {
-
+        this.treeAPI.notification(error.error);
       });
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -317,7 +319,7 @@ export class TreePageComponent implements OnInit {
       });
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -333,7 +335,7 @@ export class TreePageComponent implements OnInit {
       });
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -351,7 +353,7 @@ export class TreePageComponent implements OnInit {
       }
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -389,7 +391,7 @@ export class TreePageComponent implements OnInit {
       }
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -404,7 +406,7 @@ export class TreePageComponent implements OnInit {
       }
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -426,7 +428,7 @@ export class TreePageComponent implements OnInit {
       }
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -445,7 +447,7 @@ export class TreePageComponent implements OnInit {
       return 'line-' + uuid;
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -459,7 +461,7 @@ export class TreePageComponent implements OnInit {
       this.el.nativeElement.style.top = (absCoords.top + obj.height - offsetHeight) + 'px';
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 
@@ -468,7 +470,7 @@ export class TreePageComponent implements OnInit {
       this.layoutEl.nativeElement.style.width = "0px";
     }
     catch (error) {
-
+      console.error(error);
     }
   }
 }
