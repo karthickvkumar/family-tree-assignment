@@ -218,7 +218,6 @@ export class TreePageComponent implements OnInit {
         name: 'Peter',
         role: 'Father',
         color: 'black',
-        expand: true,
         left: 400,
         top: 30,
         child: [
@@ -314,12 +313,19 @@ export class TreePageComponent implements OnInit {
         this.focusedNode = selectedNode
         this.focusedNode.isExpanded = !selectedNode.isExpanded;
         this.selectedNode = selectedNode;
-        selectedNode.childrens.forEach((childId) => {
-          let childNode = this.familyTree.getItemsById(childId);
-          childNode.set({ opacity: !selectedNode.isExpanded ? 0 : 1 });
-          selectedNode['line-' + childId].set({ opacity: !selectedNode.isExpanded ? 0 : 1 });
-          this.familyTree.renderAll();
-        })
+        const iterateNodes = (node: any) => {
+          if (selectedNode)
+            node.childrens.forEach((childId) => {
+              let childNode = this.familyTree.getItemsById(childId);
+              childNode.set({ opacity: !selectedNode.isExpanded ? 0 : 1 });
+              node['line-' + childId].set({ opacity: !selectedNode.isExpanded ? 0 : 1 });
+              this.familyTree.renderAll();
+              if (childNode.childrens instanceof Array && childNode.childrens.length > 0) {
+                iterateNodes(childNode);
+              }
+            });
+        };
+        iterateNodes(selectedNode);
       } else {
         alert('No child nodes available')
       }
@@ -360,7 +366,7 @@ export class TreePageComponent implements OnInit {
     s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);
     s[8] = s[13] = s[18] = s[23] = "-";
     let uuid = s.join("");
-    return uuid;
+    return 'line-' + uuid;
   }
 
   positionBtn(obj) {
