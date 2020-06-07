@@ -91,6 +91,7 @@ export class TreePageComponent implements OnInit {
           this.familyTree.renderAll();
         }
       });
+      this.loading(true);
       this.getNode();
     }
     catch (error) {
@@ -259,6 +260,7 @@ export class TreePageComponent implements OnInit {
       let tree: TreeModel[] = [];
       let res = this.treeAPI.getAllNode().subscribe((respone: TreeModel[]) => {
         tree = respone;
+        this.loading(false);
         /*Iterating the node and assign it to each of its parent and child relationship */
         const iterateNodes = (tree: TreeModel[]) => {
           if (tree)
@@ -479,6 +481,31 @@ export class TreePageComponent implements OnInit {
       this.layoutEl.nativeElement.style.width = "0px";
     }
     catch (error) {
+      console.error(error);
+    }
+  }
+
+  loading(option) {
+    try {
+      if (option) {
+        let looader: fabric.IText = new fabric.IText("Loading...", {
+          fontFamily: "Poppins",
+          fontSize: 42,
+          fill: "black",
+          id: 'loading-text',
+          left: 350,
+          editable: false,
+          hasBorders: false,
+          hasControls: false,
+          top: 150
+        });
+        this.familyTree.add(looader);
+      }
+      else {
+        let loadingTxt = this.familyTree.getItemsById('loading-text');
+        this.familyTree.remove(loadingTxt);
+      }
+    } catch (error) {
       console.error(error);
     }
   }
